@@ -68,13 +68,15 @@ tabsetPanel (
                  selectInput("dtst", "Which Dataset ? ", choices=c("None"), selected="None",multiple = FALSE),
                  selectInput("grphst", "Which Time Interval ? ", choices=c("All Time","Noon","MidNight"), multiple = FALSE),
                  selectInput("colnm", "Select columns to display",choices = "ALL", multiple = FALSE,selected="ALL"),
-                 selectInput("ytdsp", "Select Year to Display", choices="None", multiple = FALSE),
+                 selectizeInput("ytdsp", "Select Year to Display", choices="None", multiple = FALSE),
                  selectInput("prblm", "Select Means of Qualification", choices=qualif, multiple = FALSE),
                  
-                 downloadButton('download1',"Download Qualified Data"),
+                 downloadButton('download1',icon = icon("cloud-download"),"Download Qualified Data"),
                  
-                 actionButton("button", "Qualify Data and Show Graph"),
-                 
+                 actionButton("button",icon=icon("line-chart"), "Qualify Data and Show Graph"),
+                 actionButton(inputId='ab1', label="Learn More", 
+                              icon = icon("th"), 
+                              onclick ="location.href='https://github.com/ruoning88/Bio-Data-QAQC-Tool';"),
                  
                  useShinyalert(), 
                  tags$head(
@@ -88,14 +90,14 @@ tabsetPanel (
                         }
                         "))
                  ),
-                 actionButton("Dialog1", "?", style='padding:4px; font-size:170%;
+                 actionButton("Dialog1", "",icon=icon("warning"), style='padding:4px; font-size:170%;
                             color:yellow; background-color:#f49f02; margin-left: 320px;'
                  )
                ),
                
                mainPanel(
 
-                 withSpinner(uiOutput("plot"),color="#f7b336")
+                 withSpinner(uiOutput("plot"),color="#f7b336",type=4,size=1.5)
                  
                )
              )),
@@ -129,7 +131,7 @@ tabsetPanel (
                            accept = c(".csv")),
                  selectInput("Intv", "Which Time Interval? ", choices=c("Yearly","Monthly"), selected="Yearly",multiple = FALSE),
                  selectInput("varnm", "Select columns to display",choices = "ALL", multiple = FALSE,selected="ALL"),
-                 actionButton("ovbutton", "Show Data Overview Graph"),
+                 actionButton("ovbutton", icon=icon("line-chart"),"Show Data Overview Graph"),
                  
                  useShinyalert(), 
                  tags$head(
@@ -143,13 +145,13 @@ tabsetPanel (
                                    }
                                    "))
                    ),
-                 actionButton("Dialog2", "?", style='padding:4px; font-size:170%;
+                 actionButton("Dialog2", "",icon=icon("warning") ,style='padding:4px; font-size:170%;
                               color:yellow; background-color:#f49f02; margin-left: 320px;'
                  )
     ),
     
     mainPanel(
-      withSpinner(plotlyOutput(outputId="zplot",height="500px",width="100%"),color="#f7b336")
+      withSpinner(plotlyOutput(outputId="zplot",height="500px",width="100%"),color="#f7b336",type=4,size=1.5)
     )
   )
   
@@ -180,7 +182,8 @@ server <- function (input,output,session) {
   observeEvent(input$file1,{
     updateSelectInput(session,
                       inputId = "colnm",
-                      choices = colnames(data())[2:length(colnames(data()))])
+                      choices = colnames(data())[2:length(colnames(data()))]
+                      )
    
   }
   )
@@ -199,9 +202,9 @@ server <- function (input,output,session) {
   time$Var <- as.numeric(as.character(time$Var))
   time <- time[-which(is.na(time$Time)),]
   
-  updateSelectInput(session,
+  updateSelectizeInput(session,
                     inputId = "ytdsp",
-                    choices = as.numeric(as.character(time$Year)))
+                    choices = c(Choose='',as.numeric(as.character(unique(time$Year)))),server=TRUE)
   }
   )
   
@@ -676,7 +679,7 @@ output$download1 <- downloadHandler(
 ## Info Button
 observeEvent(input$Dialog1, {
   shinyalert("Information Regarding this Tab", "This Tab Qualifies the dataset  \nbased on the criterion provided:
-               \n There are some points to pay attention to when using the app.
+               \n There are some points to pay attention to when using the app. 
                \n•The first column of the dataset(.csv) has to be in date time format (month/day/Year Hour:Minutes)
                \n•The first row has to be the source of the dataset (i.e. If your dataset records lake statistics about lake Lacawac, then the first row should all be filled in with Lake Lacawac')
                \n•The second row of the dataset has to be the varaiable names (i.e. Temerature, PH, etc.)
@@ -688,7 +691,8 @@ observeEvent(input$Dialog1, {
                \n•No matter which module is used, the graphics should be interactive. When you click on the datapoints,hover texts will display."
                , type = "info",closeOnClickOutside = TRUE)
 })
-  
+
+ 
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#  
 ## Tab 2: Overview
 ## Read in Dataset: First Column must be Time/Date 
